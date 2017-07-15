@@ -1,0 +1,13 @@
+﻿{
+  "Name": "LovedLabels",
+  "Author": "Advize & Jinxiewinxie",
+  "Version": {
+    "MajorVersion": 2,
+    "MinorVersion": 1,
+    "PatchVersion": 0,
+    "Build": ""
+  },
+  "Description": "Gives pets customizable tooltips so you can see who needs the love.",
+  "UniqueID": "",
+  "EntryDll": "LovedLabels.dll"
+}
