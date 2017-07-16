@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using LovedLabels.Framework;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -21,14 +19,14 @@ namespace LovedLabels
         *********/
         /// <summary>The mod configuration.</summary>
         private LoveLabelConfig Config;
-        
+
         /// <summary>The texture used to display a heart.</summary>
         private Texture2D Heart;
 
         /// <summary>The current tooltip message to show.</summary>
         private string HoverText;
 
-        
+
         /*********
         ** Public methods
         *********/
@@ -56,43 +54,45 @@ namespace LovedLabels
         /// <param name="e">The event arguments.</param>
         private void Event_UpdateTick(object sender, EventArgs e)
         {
-            if (!Game1.hasLoadedGame)
-                return;
-            if (!Game1.currentLocation.isFarm)
+            if (!Context.IsPlayerFree || !Game1.currentLocation.isFarm)
                 return;
 
+            // reset tooltip
             this.HoverText = null;
-            GameLocation currentLocation = Game1.currentLocation;
+
+            // get context
+            GameLocation location = Game1.currentLocation;
             Vector2 mousePos = new Vector2(Game1.getOldMouseX() + Game1.viewport.X, Game1.getOldMouseY() + Game1.viewport.Y) / Game1.tileSize;
 
-            List<FarmAnimal> animals = new List<FarmAnimal>();
-            if (currentLocation is AnimalHouse)
-                animals = ((AnimalHouse)currentLocation).animals.Values.ToList();
-            else if (currentLocation is Farm)
-                animals = ((Farm)currentLocation).animals.Values.ToList();
-
-            foreach (FarmAnimal animal in animals)
+            // show animal tooltip
             {
-                // Following values could use tweaking, no idea wtf is going on here
-                RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.sprite.getHeight(), animal.sprite.getWidth() * 3 + animal.sprite.getWidth() / 1.5f, animal.sprite.getHeight() * 4);
+                // find animals
+                FarmAnimal[] animals = new FarmAnimal[0];
+                if (location is AnimalHouse)
+                    animals = ((AnimalHouse)location).animals.Values.ToArray();
+                else if (location is Farm)
+                    animals = ((Farm)location).animals.Values.ToArray();
 
-                if (animalBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
-                    this.HoverText = animal.wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
-            }
-
-            foreach (NPC npc in currentLocation.characters)
-            {
-                if (npc is Pet)
+                // show tooltip
+                foreach (FarmAnimal animal in animals)
                 {
                     // Following values could use tweaking, no idea wtf is going on here
-                    RectangleF petBoundaries = new RectangleF(npc.position.X, npc.position.Y - npc.sprite.getHeight() * 2, npc.sprite.getWidth() * 3 + npc.sprite.getWidth() / 1.5f, npc.sprite.getHeight() * 4);
+                    RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.sprite.getHeight(), animal.sprite.getWidth() * 3 + animal.sprite.getWidth() / 1.5f, animal.sprite.getHeight() * 4);
+                    if (animalBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
+                        this.HoverText = animal.wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
+                }
+            }
 
-                    if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
-                    {
-                        //bool wasPet = (bool)typeof(Pet).GetField("wasPetToday", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(npc as Pet);
-                        bool wasPet = Helper.Reflection.GetPrivateValue<bool>(npc, "wasPetToday");
-                        this.HoverText = wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
-                    }
+            // show pet tooltip
+            foreach (Pet pet in location.characters.OfType<Pet>())
+            {
+                // Following values could use tweaking, no idea wtf is going on here
+                RectangleF petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.sprite.getHeight() * 2, pet.sprite.getWidth() * 3 + pet.sprite.getWidth() / 1.5f, pet.sprite.getHeight() * 4);
+
+                if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
+                {
+                    bool wasPet = this.Helper.Reflection.GetPrivateValue<bool>(pet, "wasPetToday");
+                    this.HoverText = wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
                 }
             }
         }
@@ -102,7 +102,7 @@ namespace LovedLabels
         /// <param name="e">The event arguments.</param>
         private void Event_PostRenderHUDEvent(object sender, EventArgs e)
         {
-            if (this.HoverText != null && Game1.activeClickableMenu == null)
+            if (Context.IsPlayerFree && this.HoverText != null)
                 this.DrawSimpleTooltip(Game1.spriteBatch, this.HoverText, Game1.smallFont);
         }
 
