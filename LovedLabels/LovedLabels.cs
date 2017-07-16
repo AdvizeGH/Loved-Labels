@@ -39,8 +39,10 @@ namespace LovedLabels
             // read config
             this.Config = helper.ReadConfig<LoveLabelConfig>();
 
+            // read texture
+            this.Heart = helper.Content.Load<Texture2D>("heart.png");
+
             // hook up events
-            SaveEvents.AfterLoad += this.SaveEvents_AfterLoad;
             GameEvents.UpdateTick += this.Event_UpdateTick;
             GraphicsEvents.OnPostRenderHudEvent += this.Event_PostRenderHUDEvent;
         }
@@ -49,22 +51,6 @@ namespace LovedLabels
         /*********
         ** Private methods
         *********/
-        /// <summary>The event called after the player loads a save.</summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
-        private void SaveEvents_AfterLoad(object sender, EventArgs e)
-        {
-            try
-            {
-                ContentManager cm = new ContentManager(Game1.content.ServiceProvider, Helper.DirectoryPath);
-                this.Heart = cm.Load<Texture2D>("hearts");
-            }
-            catch (Exception ex)
-            {
-                Monitor.Log("Failed to load heart texture: " + ex, LogLevel.Error);
-            }
-        }
-
         /// <summary>The event called when the game is updating (roughly 60 times per second).</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
