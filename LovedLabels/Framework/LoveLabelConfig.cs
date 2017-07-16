@@ -1,7 +1,7 @@
 namespace LovedLabels.Framework
 {
     /// <summary>The mod settings that can be configured by the user.</summary>
-    public class LoveLabelConfig
+    internal class LoveLabelConfig
     {
         /*********
         ** Accessors

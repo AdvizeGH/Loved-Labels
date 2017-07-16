@@ -1,7 +1,7 @@
 namespace LovedLabels.Framework
 {
     /// <summary>An simple rectangle that accepts float values for boundary checks.</summary>
-    public class RectangleF
+    internal class RectangleF
     {
         /*********
         ** Accessors
