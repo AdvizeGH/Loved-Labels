@@ -21,7 +21,7 @@ namespace LovedLabels
         private LoveLabelConfig Config;
 
         /// <summary>The texture used to display a heart.</summary>
-        private Texture2D Heart;
+        private Texture2D Hearts;
 
         /// <summary>The current tooltip message to show.</summary>
         private string HoverText;
@@ -38,7 +38,7 @@ namespace LovedLabels
             this.Config = helper.ReadConfig<LoveLabelConfig>();
 
             // read texture
-            this.Heart = helper.Content.Load<Texture2D>("heart.png");
+            this.Hearts = helper.Content.Load<Texture2D>("hearts.png");
 
             // hook up events
             GameEvents.UpdateTick += this.Event_UpdateTick;
@@ -113,7 +113,7 @@ namespace LovedLabels
         private void DrawSimpleTooltip(SpriteBatch b, string hoverText, SpriteFont font)
         {
             Vector2 textSize = font.MeasureString(hoverText);
-            int width = (int)textSize.X + this.Heart.Width + Game1.tileSize / 2;
+            int width = (int)textSize.X + this.Hearts.Width + Game1.tileSize / 2;
             int height = Math.Max(60, (int)textSize.Y + Game1.tileSize / 2);
             int x = Game1.getOldMouseX() + Game1.tileSize / 2;
             int y = Game1.getOldMouseY() + Game1.tileSize / 2;
@@ -136,10 +136,10 @@ namespace LovedLabels
                 b.DrawString(font, hoverText, tPosVector + new Vector2(2f, 0f), Game1.textShadowColor, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
                 b.DrawString(font, hoverText, tPosVector, Game1.textColor * 0.9f, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
-            float halfHeartSize = this.Heart.Width * 0.5f;
+            float halfHeartSize = this.Hearts.Width * 0.5f;
             int sourceY = (hoverText == this.Config.AlreadyPettedLabel) ? 0 : 32;
             Vector2 heartpos = new Vector2(x + textSize.X + halfHeartSize, y + halfHeartSize);
-            b.Draw(this.Heart, heartpos, new Rectangle(0, sourceY, 32, 32), Color.White);
+            b.Draw(this.Hearts, heartpos, new Rectangle(0, sourceY, 32, 32), Color.White);
         }
     }
 }
