@@ -1,7 +1,7 @@
 ﻿{
   "Name": "LovedLabels",
   "Author": "Advize & Jinxiewinxie",
-  "Version": "2.1.0",
+  "Version": "2.2.0",
   "Description": "Gives pets customizable tooltips so you can see who needs the love.",
   "UniqueID": "Advize.LovedLabels",
   "EntryDll": "LovedLabels.dll",
