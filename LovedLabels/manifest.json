@@ -1,14 +1,10 @@
 ﻿{
   "Name": "LovedLabels",
   "Author": "Advize & Jinxiewinxie",
-  "Version": {
-    "MajorVersion": 2,
-    "MinorVersion": 1,
-    "PatchVersion": 0,
-    "Build": null
-  },
-  "MinimumApiVersion": "1.15",
+  "Version": "2.1.0",
   "Description": "Gives pets customizable tooltips so you can see who needs the love.",
   "UniqueID": "Advize.LovedLabels",
-  "EntryDll": "LovedLabels.dll"
+  "EntryDll": "LovedLabels.dll",
+  "MinimumApiVersion": "2.0",
+  "UpdateKeys": [ "Nexus:279" ]
 }
