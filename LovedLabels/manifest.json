@@ -5,6 +5,6 @@
   "Description": "Gives pets customizable tooltips so you can see who needs the love.",
   "UniqueID": "Advize.LovedLabels",
   "EntryDll": "LovedLabels.dll",
-  "MinimumApiVersion": "2.0",
+  "MinimumApiVersion": "2.6-beta",
   "UpdateKeys": [ "Nexus:279" ]
 }

@@ -54,7 +54,7 @@ namespace LovedLabels
         /// <param name="e">The event arguments.</param>
         private void Event_UpdateTick(object sender, EventArgs e)
         {
-            if (!Context.IsPlayerFree || !Game1.currentLocation.isFarm)
+            if (!Context.IsPlayerFree || !Game1.currentLocation.IsFarm)
                 return;
 
             // reset tooltip
@@ -68,18 +68,18 @@ namespace LovedLabels
             {
                 // find animals
                 FarmAnimal[] animals = new FarmAnimal[0];
-                if (location is AnimalHouse)
-                    animals = ((AnimalHouse)location).animals.Values.ToArray();
-                else if (location is Farm)
-                    animals = ((Farm)location).animals.Values.ToArray();
+                if (location is AnimalHouse house)
+                    animals = house.animals.Values.ToArray();
+                else if (location is Farm farm)
+                    animals = farm.animals.Values.ToArray();
 
                 // show tooltip
                 foreach (FarmAnimal animal in animals)
                 {
                     // Following values could use tweaking, no idea wtf is going on here
-                    RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.sprite.getHeight(), animal.sprite.getWidth() * 3 + animal.sprite.getWidth() / 1.5f, animal.sprite.getHeight() * 4);
+                    RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.Sprite.getHeight(), animal.Sprite.getWidth() * 3 + animal.Sprite.getWidth() / 1.5f, animal.Sprite.getHeight() * 4);
                     if (animalBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
-                        this.HoverText = animal.wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
+                        this.HoverText = animal.wasPet.Value ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
                 }
             }
 
@@ -87,11 +87,11 @@ namespace LovedLabels
             foreach (Pet pet in location.characters.OfType<Pet>())
             {
                 // Following values could use tweaking, no idea wtf is going on here
-                RectangleF petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.sprite.getHeight() * 2, pet.sprite.getWidth() * 3 + pet.sprite.getWidth() / 1.5f, pet.sprite.getHeight() * 4);
+                RectangleF petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.Sprite.getHeight() * 2, pet.Sprite.getWidth() * 3 + pet.Sprite.getWidth() / 1.5f, pet.Sprite.getHeight() * 4);
 
                 if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
                 {
-                    bool wasPet = this.Helper.Reflection.GetPrivateValue<bool>(pet, "wasPetToday");
+                    bool wasPet = this.Helper.Reflection.GetField<bool>(pet, "wasPetToday").GetValue();
                     this.HoverText = wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
                 }
             }
