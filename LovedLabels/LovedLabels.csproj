@@ -39,11 +39,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LovedLabels.cs" />
-    <Compile Include="Framework\LoveLabelConfig.cs" />
     <Compile Include="Framework\RectangleF.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="i18n\default.json" />
     <None Include="manifest.json" />
     <None Include="hearts.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
