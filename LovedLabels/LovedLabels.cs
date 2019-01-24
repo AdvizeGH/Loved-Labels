@@ -41,18 +41,18 @@ namespace LovedLabels
             this.Hearts = helper.Content.Load<Texture2D>("hearts.png");
 
             // hook up events
-            GameEvents.UpdateTick += this.Event_UpdateTick;
-            GraphicsEvents.OnPostRenderHudEvent += this.Event_PostRenderHUDEvent;
+            helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
+            helper.Events.Display.RenderedHud += this.OnRenderedHud;
         }
 
 
         /*********
         ** Private methods
         *********/
-        /// <summary>The event called when the game is updating (roughly 60 times per second).</summary>
+        /// <summary>Raised after the game state is updated (≈60 times per second).</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_UpdateTick(object sender, EventArgs e)
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsPlayerFree || !Game1.currentLocation.IsFarm)
                 return;
@@ -97,10 +97,10 @@ namespace LovedLabels
             }
         }
 
-        /// <summary>The event called after the game draws to the screen, but before it closes the sprite batch.</summary>
+        /// <summary>Raised after drawing the HUD (item toolbar, clock, etc) to the sprite batch, but before it's rendered to the screen.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_PostRenderHUDEvent(object sender, EventArgs e)
+        private void OnRenderedHud(object sender, RenderedHudEventArgs e)
         {
             if (Context.IsPlayerFree && this.HoverText != null)
                 this.DrawSimpleTooltip(Game1.spriteBatch, this.HoverText, Game1.smallFont);
