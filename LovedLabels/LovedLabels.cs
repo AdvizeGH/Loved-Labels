@@ -38,7 +38,7 @@ namespace LovedLabels
         public override void Entry(IModHelper helper)
         {
             // read texture
-            this.Hearts = helper.Content.Load<Texture2D>("hearts.png");
+            this.Hearts = helper.Content.Load<Texture2D>("assets/hearts.png");
 
             // hook up events
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
