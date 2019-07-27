@@ -101,7 +101,7 @@ namespace LovedLabels
 
                 if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
                 {
-                    bool wasPet = this.Helper.Reflection.GetField<bool>(pet, "wasPetToday").GetValue();
+                    bool wasPet = pet.lastPetDay.TryGetValue(Game1.player.UniqueMultiplayerID, out int lastPetDay) && lastPetDay == Game1.Date.TotalDays;
                     this.HoverText = wasPet ? this.PettedLabel : this.NotPettedLabel;
                 }
             }
