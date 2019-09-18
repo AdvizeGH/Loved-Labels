@@ -17,8 +17,11 @@ namespace LovedLabels
         /*********
         ** Properties
         *********/
-        /// <summary>The mod configuration.</summary>
-        private LoveLabelConfig Config;
+        /// <summary>The label to display for a petted animal.</summary>
+        private string PettedLabel;
+
+        /// <summary>The label to display for a non-petted animal.</summary>
+        private string NotPettedLabel;
 
         /// <summary>The texture used to display a heart.</summary>
         private Texture2D Hearts;
@@ -34,25 +37,32 @@ namespace LovedLabels
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper)
         {
-            // read config
-            this.Config = helper.ReadConfig<LoveLabelConfig>();
-
             // read texture
-            this.Hearts = helper.Content.Load<Texture2D>("hearts.png");
+            this.Hearts = helper.Content.Load<Texture2D>("assets/hearts.png");
 
             // hook up events
-            GameEvents.UpdateTick += this.Event_UpdateTick;
-            GraphicsEvents.OnPostRenderHudEvent += this.Event_PostRenderHUDEvent;
+            helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+            helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
+            helper.Events.Display.RenderedHud += this.OnRenderedHud;
         }
 
 
         /*********
         ** Private methods
         *********/
-        /// <summary>The event called when the game is updating (roughly 60 times per second).</summary>
+        /// <summary>Raised after the player loads a save slot and the world is initialised.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_UpdateTick(object sender, EventArgs e)
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            this.PettedLabel = this.Helper.Translation.Get("label.petted");
+            this.NotPettedLabel = this.Helper.Translation.Get("label.not-petted");
+        }
+
+        /// <summary>Raised after the game state is updated (≈60 times per second).</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsPlayerFree || !Game1.currentLocation.IsFarm)
                 return;
@@ -79,7 +89,7 @@ namespace LovedLabels
                     // Following values could use tweaking, no idea wtf is going on here
                     RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.Sprite.getHeight(), animal.Sprite.getWidth() * 3 + animal.Sprite.getWidth() / 1.5f, animal.Sprite.getHeight() * 4);
                     if (animalBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
-                        this.HoverText = animal.wasPet.Value ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
+                        this.HoverText = animal.wasPet.Value ? this.PettedLabel : this.NotPettedLabel;
                 }
             }
 
@@ -91,16 +101,16 @@ namespace LovedLabels
 
                 if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
                 {
-                    bool wasPet = this.Helper.Reflection.GetField<bool>(pet, "wasPetToday").GetValue();
-                    this.HoverText = wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
+                    bool wasPet = pet.lastPetDay.TryGetValue(Game1.player.UniqueMultiplayerID, out int lastPetDay) && lastPetDay == Game1.Date.TotalDays;
+                    this.HoverText = wasPet ? this.PettedLabel : this.NotPettedLabel;
                 }
             }
         }
 
-        /// <summary>The event called after the game draws to the screen, but before it closes the sprite batch.</summary>
+        /// <summary>Raised after drawing the HUD (item toolbar, clock, etc) to the sprite batch, but before it's rendered to the screen.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_PostRenderHUDEvent(object sender, EventArgs e)
+        private void OnRenderedHud(object sender, RenderedHudEventArgs e)
         {
             if (Context.IsPlayerFree && this.HoverText != null)
                 this.DrawSimpleTooltip(Game1.spriteBatch, this.HoverText, Game1.smallFont);
@@ -137,9 +147,9 @@ namespace LovedLabels
                 b.DrawString(font, hoverText, tPosVector, Game1.textColor * 0.9f, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             float halfHeartSize = this.Hearts.Width * 0.5f;
-            int sourceY = (hoverText == this.Config.AlreadyPettedLabel) ? 0 : 32;
-            Vector2 heartpos = new Vector2(x + textSize.X + halfHeartSize, y + halfHeartSize);
-            b.Draw(this.Hearts, heartpos, new Rectangle(0, sourceY, 32, 32), Color.White);
+            int sourceY = (hoverText == this.PettedLabel) ? 0 : 32;
+            Vector2 heartPos = new Vector2(x + textSize.X + halfHeartSize, y + halfHeartSize);
+            b.Draw(this.Hearts, heartPos, new Rectangle(0, sourceY, 32, 32), Color.White);
         }
     }
 }
