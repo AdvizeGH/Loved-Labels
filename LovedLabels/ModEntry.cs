@@ -3,16 +3,18 @@ using System.Linq;
 using LovedLabels.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Characters;
 using StardewValley.Menus;
+using StardewValley.Network;
 
 namespace LovedLabels
 {
     /// <summary>The mod entry class.</summary>
-    public class LovedLabels : Mod
+    public class ModEntry : Mod
     {
         /*********
         ** Properties
@@ -95,8 +97,12 @@ namespace LovedLabels
                 var petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.Sprite.getHeight() * 2, pet.Sprite.getWidth() * 3 + pet.Sprite.getWidth() / 1.5f, pet.Sprite.getHeight() * 4);
 
                 if (!petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize)) continue;
-                var wasPet = Helper.Reflection.GetField<bool>(pet, "wasPetToday").GetValue();
-                _hoverText = wasPet ? _config.AlreadyPettedLabel : _config.NeedsToBePettedLabel;
+
+                bool WasPetToday(Pet pet2)
+                {
+                    var lastPettedDays = Helper.Reflection.GetField<NetLongDictionary<int, NetInt>>(pet2, "lastPetDay").GetValue();
+                    return lastPettedDays.Values.Any(day => day == Game1.Date.TotalDays);                }
+                _hoverText = WasPetToday(pet) ? _config.AlreadyPettedLabel : _config.NeedsToBePettedLabel;
             }
         }
 
