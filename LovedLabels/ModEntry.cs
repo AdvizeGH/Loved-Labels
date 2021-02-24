@@ -3,28 +3,30 @@ using System.Linq;
 using LovedLabels.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Characters;
 using StardewValley.Menus;
+using StardewValley.Network;
 
 namespace LovedLabels
 {
     /// <summary>The mod entry class.</summary>
-    public class LovedLabels : Mod
+    public class ModEntry : Mod
     {
         /*********
         ** Properties
         *********/
         /// <summary>The mod configuration.</summary>
-        private LoveLabelConfig Config;
+        private LoveLabelConfig _config;
 
         /// <summary>The texture used to display a heart.</summary>
-        private Texture2D Hearts;
+        private Texture2D _hearts;
 
         /// <summary>The current tooltip message to show.</summary>
-        private string HoverText;
+        private string _hoverText;
 
 
         /*********
@@ -35,14 +37,14 @@ namespace LovedLabels
         public override void Entry(IModHelper helper)
         {
             // read config
-            this.Config = helper.ReadConfig<LoveLabelConfig>();
+            _config = helper.ReadConfig<LoveLabelConfig>();
 
             // read texture
-            this.Hearts = helper.Content.Load<Texture2D>("hearts.png");
+            _hearts = helper.Content.Load<Texture2D>("assets/hearts.png");
 
             // hook up events
-            GameEvents.UpdateTick += this.Event_UpdateTick;
-            GraphicsEvents.OnPostRenderHudEvent += this.Event_PostRenderHUDEvent;
+            Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+            Helper.Events.Display.Rendered += OnRendered;
         }
 
 
@@ -52,58 +54,65 @@ namespace LovedLabels
         /// <summary>The event called when the game is updating (roughly 60 times per second).</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_UpdateTick(object sender, EventArgs e)
+        private void OnUpdateTicked (object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsPlayerFree || !Game1.currentLocation.IsFarm)
                 return;
 
             // reset tooltip
-            this.HoverText = null;
+            _hoverText = null;
 
             // get context
-            GameLocation location = Game1.currentLocation;
-            Vector2 mousePos = new Vector2(Game1.getOldMouseX() + Game1.viewport.X, Game1.getOldMouseY() + Game1.viewport.Y) / Game1.tileSize;
+            var location = Game1.currentLocation;
+            var mousePos = new Vector2(Game1.getOldMouseX() + Game1.viewport.X, Game1.getOldMouseY() + Game1.viewport.Y) / Game1.tileSize;
 
             // show animal tooltip
             {
                 // find animals
-                FarmAnimal[] animals = new FarmAnimal[0];
-                if (location is AnimalHouse house)
-                    animals = house.animals.Values.ToArray();
-                else if (location is Farm farm)
-                    animals = farm.animals.Values.ToArray();
+                var animals = new FarmAnimal[0];
+                switch (location)
+                {
+                    case AnimalHouse house:
+                        animals = house.animals.Values.ToArray();
+                        break;
+                    case Farm farm:
+                        animals = farm.animals.Values.ToArray();
+                        break;
+                }
 
                 // show tooltip
-                foreach (FarmAnimal animal in animals)
+                foreach (var animal in animals)
                 {
                     // Following values could use tweaking, no idea wtf is going on here
-                    RectangleF animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.Sprite.getHeight(), animal.Sprite.getWidth() * 3 + animal.Sprite.getWidth() / 1.5f, animal.Sprite.getHeight() * 4);
+                    var animalBoundaries = new RectangleF(animal.position.X, animal.position.Y - animal.Sprite.getHeight(), animal.Sprite.getWidth() * 3 + animal.Sprite.getWidth() / 1.5f, animal.Sprite.getHeight() * 4);
                     if (animalBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
-                        this.HoverText = animal.wasPet.Value ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
+                        _hoverText = animal.wasPet.Value ? _config.AlreadyPettedLabel : _config.NeedsToBePettedLabel;
                 }
             }
 
             // show pet tooltip
-            foreach (Pet pet in location.characters.OfType<Pet>())
+            foreach (var pet in location.characters.OfType<Pet>())
             {
                 // Following values could use tweaking, no idea wtf is going on here
-                RectangleF petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.Sprite.getHeight() * 2, pet.Sprite.getWidth() * 3 + pet.Sprite.getWidth() / 1.5f, pet.Sprite.getHeight() * 4);
+                var petBoundaries = new RectangleF(pet.position.X, pet.position.Y - pet.Sprite.getHeight() * 2, pet.Sprite.getWidth() * 3 + pet.Sprite.getWidth() / 1.5f, pet.Sprite.getHeight() * 4);
 
-                if (petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize))
+                if (!petBoundaries.Contains(mousePos.X * Game1.tileSize, mousePos.Y * Game1.tileSize)) continue;
+
+                bool WasPetToday(Pet pet2)
                 {
-                    bool wasPet = this.Helper.Reflection.GetField<bool>(pet, "wasPetToday").GetValue();
-                    this.HoverText = wasPet ? this.Config.AlreadyPettedLabel : this.Config.NeedsToBePettedLabel;
-                }
+                    var lastPettedDays = Helper.Reflection.GetField<NetLongDictionary<int, NetInt>>(pet2, "lastPetDay").GetValue();
+                    return lastPettedDays.Values.Any(day => day == Game1.Date.TotalDays);                }
+                _hoverText = WasPetToday(pet) ? _config.AlreadyPettedLabel : _config.NeedsToBePettedLabel;
             }
         }
 
         /// <summary>The event called after the game draws to the screen, but before it closes the sprite batch.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void Event_PostRenderHUDEvent(object sender, EventArgs e)
+        private void OnRendered (object sender, RenderedEventArgs e)
         {
-            if (Context.IsPlayerFree && this.HoverText != null)
-                this.DrawSimpleTooltip(Game1.spriteBatch, this.HoverText, Game1.smallFont);
+            if (Context.IsPlayerFree && _hoverText != null)
+                DrawSimpleTooltip(Game1.spriteBatch, _hoverText, Game1.smallFont);
         }
 
         /// <summary>Draw tooltip at the cursor position with the given message.</summary>
@@ -112,11 +121,11 @@ namespace LovedLabels
         /// <param name="font">The tooltip font.</param>
         private void DrawSimpleTooltip(SpriteBatch b, string hoverText, SpriteFont font)
         {
-            Vector2 textSize = font.MeasureString(hoverText);
-            int width = (int)textSize.X + this.Hearts.Width + Game1.tileSize / 2;
-            int height = Math.Max(60, (int)textSize.Y + Game1.tileSize / 2);
-            int x = Game1.getOldMouseX() + Game1.tileSize / 2;
-            int y = Game1.getOldMouseY() + Game1.tileSize / 2;
+            var textSize = font.MeasureString(hoverText);
+            var width = (int)textSize.X + _hearts.Width + Game1.tileSize / 2;
+            var height = Math.Max(60, (int)textSize.Y + Game1.tileSize / 2);
+            var x = Game1.getOldMouseX() + Game1.tileSize / 2;
+            var y = Game1.getOldMouseY() + Game1.tileSize / 2;
             if (x + width > Game1.viewport.Width)
             {
                 x = Game1.viewport.Width - width;
@@ -130,16 +139,16 @@ namespace LovedLabels
             IClickableMenu.drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x, y, width, height, Color.White);
             if (hoverText.Length > 1)
             {
-                Vector2 tPosVector = new Vector2(x + (Game1.tileSize / 4), y + (Game1.tileSize / 4 + 4));
+                var tPosVector = new Vector2(x + (Game1.tileSize / 4), y + (Game1.tileSize / 4 + 4));
                 b.DrawString(font, hoverText, tPosVector + new Vector2(2f, 2f), Game1.textShadowColor, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
                 b.DrawString(font, hoverText, tPosVector + new Vector2(0f, 2f), Game1.textShadowColor, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
                 b.DrawString(font, hoverText, tPosVector + new Vector2(2f, 0f), Game1.textShadowColor, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
                 b.DrawString(font, hoverText, tPosVector, Game1.textColor * 0.9f, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
-            float halfHeartSize = this.Hearts.Width * 0.5f;
-            int sourceY = (hoverText == this.Config.AlreadyPettedLabel) ? 0 : 32;
-            Vector2 heartpos = new Vector2(x + textSize.X + halfHeartSize, y + halfHeartSize);
-            b.Draw(this.Hearts, heartpos, new Rectangle(0, sourceY, 32, 32), Color.White);
+            var halfHeartSize = _hearts.Width * 0.5f;
+            var sourceY = (hoverText == _config.AlreadyPettedLabel) ? 0 : 32;
+            var heartpos = new Vector2(x + textSize.X + halfHeartSize, y + halfHeartSize);
+            b.Draw(_hearts, heartpos, new Rectangle(0, sourceY, 32, 32), Color.White);
         }
     }
 }

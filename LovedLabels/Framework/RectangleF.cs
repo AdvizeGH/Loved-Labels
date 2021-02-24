@@ -41,10 +41,10 @@ namespace LovedLabels.Framework
         public bool Contains(float x, float y)
         {
             return
-                x >= this.X
-                && x < this.X + this.Width
-                && y >= this.Y
-                && y < this.Y + this.Height;
+                x >= X
+                && x < X + Width
+                && y >= Y
+                && y < Y + Height;
         }
     }
 }
